@@ -3,7 +3,7 @@ import { resolveCurrentEventId } from "@/lib/events/current-event";
 import { getCurrentUser } from "@/lib/permissions/server";
 import { Can } from "@/lib/permissions/context";
 import { DocumentUploadDialog } from "@/app/(app)/documents/document-upload-dialog";
-import { DocumentsTable } from "@/app/(app)/documents/documents-table";
+import { DocumentsExplorer } from "@/app/(app)/documents/documents-explorer";
 
 export default async function DocumentsPage() {
   const eventId = await resolveCurrentEventId();
@@ -32,7 +32,7 @@ export default async function DocumentsPage() {
           <DocumentUploadDialog />
         </Can>
       </div>
-      <DocumentsTable documents={documents ?? []} />
+      <DocumentsExplorer documents={documents ?? []} />
     </div>
   );
 }

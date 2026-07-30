@@ -15,25 +15,11 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { DOCUMENT_CONFIDENTIALITY_LABELS } from "@/lib/labels";
+import { DOCUMENT_CONFIDENTIALITY_LABELS, DOCUMENT_CATEGORY_LABELS } from "@/lib/labels";
 import { getSignedDownloadUrlAction, archiveDocumentAction } from "@/app/(app)/documents/actions";
 import { usePermissions } from "@/lib/permissions/context";
 import { Download, Trash2 } from "lucide-react";
 import type { Tables } from "@/types/database.types";
-
-const CATEGORY_LABELS: Record<string, string> = {
-  partners: "Partenaires",
-  speakers: "Speakers",
-  contracts: "Contrats",
-  conventions: "Conventions",
-  invoices: "Factures",
-  communication: "Communication",
-  administrative: "Administratif",
-  budget: "Budget",
-  logistics: "Logistique",
-  technical: "Technique",
-  team: "Équipe",
-};
 
 function formatSize(bytes: number | null) {
   if (!bytes) return "—";
@@ -88,7 +74,7 @@ export function DocumentsTable({ documents }: { documents: Tables<"documents">[]
             documents.map((doc) => (
               <TableRow key={doc.id}>
                 <TableCell className="font-medium">{doc.name}</TableCell>
-                <TableCell>{CATEGORY_LABELS[doc.category] ?? doc.category}</TableCell>
+                <TableCell>{DOCUMENT_CATEGORY_LABELS[doc.category] ?? doc.category}</TableCell>
                 <TableCell className="text-sm text-muted-foreground">
                   {DOCUMENT_CONFIDENTIALITY_LABELS[doc.confidentiality_level]}
                 </TableCell>

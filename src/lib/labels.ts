@@ -112,6 +112,20 @@ export const DOCUMENT_CONFIDENTIALITY_LABELS: Record<DocumentConfidentiality, st
   super_admin_only: "Réservé à la super-administratrice",
 };
 
+export const DOCUMENT_CATEGORY_LABELS: Record<string, string> = {
+  partners: "Partenaires",
+  speakers: "Speakers",
+  contracts: "Contrats",
+  conventions: "Conventions",
+  invoices: "Factures",
+  communication: "Communication",
+  administrative: "Administratif",
+  budget: "Budget",
+  logistics: "Logistique",
+  technical: "Technique",
+  team: "Équipe",
+};
+
 export const TEAM_POLE_LABELS: Record<TeamPole, string> = {
   direction: "Direction",
   partners: "Partenaires",

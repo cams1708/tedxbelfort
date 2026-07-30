@@ -16,22 +16,8 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { DOCUMENT_CONFIDENTIALITY_LABELS } from "@/lib/labels";
+import { DOCUMENT_CONFIDENTIALITY_LABELS, DOCUMENT_CATEGORY_LABELS } from "@/lib/labels";
 import { UploadIcon } from "lucide-react";
-
-const CATEGORY_LABELS: Record<string, string> = {
-  partners: "Partenaires",
-  speakers: "Speakers",
-  contracts: "Contrats",
-  conventions: "Conventions",
-  invoices: "Factures",
-  communication: "Communication",
-  administrative: "Administratif",
-  budget: "Budget",
-  logistics: "Logistique",
-  technical: "Technique",
-  team: "Équipe",
-};
 
 export function DocumentUploadDialog() {
   const { open, setOpen, error, isPending, handleAction } = useActionDialog(uploadDocumentAction);
@@ -72,7 +58,7 @@ export function DocumentUploadDialog() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {Object.entries(CATEGORY_LABELS).map(([value, label]) => (
+                  {Object.entries(DOCUMENT_CATEGORY_LABELS).map(([value, label]) => (
                     <SelectItem key={value} value={value}>
                       {label}
                     </SelectItem>
