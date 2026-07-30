@@ -14,6 +14,7 @@ import { TransactionDeleteButton } from "@/app/(app)/budget/transaction-delete-b
 import { BudgetChart } from "@/app/(app)/budget/budget-chart";
 import { BudgetComparisonTable } from "@/app/(app)/budget/budget-comparison-table";
 import { BudgetCashflowTable } from "@/app/(app)/budget/budget-cashflow-table";
+import { BudgetBilanTable } from "@/app/(app)/budget/budget-bilan-table";
 import { RequestAccessButton } from "@/components/shared/request-access-button";
 import { Can } from "@/lib/permissions/context";
 import { ExportButton } from "@/components/shared/export-button";
@@ -160,6 +161,7 @@ export default async function BudgetPage() {
       <Tabs defaultValue="overview" className="flex flex-col gap-4">
         <TabsList>
           <TabsTrigger value="overview">Vue d’ensemble</TabsTrigger>
+          <TabsTrigger value="bilan">Bilan</TabsTrigger>
           <TabsTrigger value="comparison">Comparaison</TabsTrigger>
           <TabsTrigger value="cashflow">Trésorerie</TabsTrigger>
         </TabsList>
@@ -337,6 +339,10 @@ export default async function BudgetPage() {
               </TableBody>
             </Table>
           </div>
+        </TabsContent>
+
+        <TabsContent value="bilan" className="flex flex-col gap-4">
+          <BudgetBilanTable rows={comparisonRows} currency={currency} />
         </TabsContent>
 
         <TabsContent value="comparison" className="flex flex-col gap-4">
