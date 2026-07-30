@@ -54,23 +54,28 @@ export async function uploadDocumentAction(formData: FormData): Promise<ActionSt
   });
   if (uploadError) return { error: "Échec de l’envoi du fichier (" + uploadError.message + ")" };
 
-  const { partner_id, speaker_id, task_id, expires_at, ...rest } = parsed.data;
-  const { error: insertError } = await supabase.from("documents").insert({
-    event_id: eventId,
-    author_id: user.id,
-    storage_path: path,
-    file_size: file.size,
-    mime_type: file.type || null,
-    partner_id: partner_id || null,
-    speaker_id: speaker_id || null,
-    task_id: task_id || null,
-    expires_at: expires_at ? new Date(expires_at).toISOString() : null,
-    ...rest,
+  const { partner_id, speaker_id, task_id, expires_at, name, category, confidentiality_level } = parsed.data;
+  const { data: documentId, error: insertError } = await supabase.rpc("create_document", {
+    p_event_id: eventId,
+    p_author_id: user.id,
+    p_storage_path: path,
+    p_file_size: file.size,
+    p_mime_type: file.type || null,
+    p_name: name,
+    p_category: category,
+    p_confidentiality_level: confidentiality_level,
+    p_partner_id: partner_id || null,
+    p_speaker_id: speaker_id || null,
+    p_task_id: task_id || null,
   });
 
-  if (insertError) {
+  if (insertError || !documentId) {
     await admin.storage.from(BUCKET).remove([path]);
-    return { error: "Impossible d’enregistrer le document (" + insertError.message + ")" };
+    return { error: "Impossible d’enregistrer le document (" + (insertError?.message ?? "erreur inconnue") + ")" };
+  }
+
+  if (expires_at) {
+    await supabase.from("documents").update({ expires_at: new Date(expires_at).toISOString() }).eq("id", documentId);
   }
 
   revalidatePath("/documents");

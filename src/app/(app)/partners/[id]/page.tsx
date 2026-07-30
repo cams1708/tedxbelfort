@@ -6,6 +6,7 @@ import { can } from "@/lib/permissions/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PartnerDetailHeader } from "@/app/(app)/partners/[id]/partner-detail-header";
+import { BackLink } from "@/components/shared/back-link";
 import { PartnerAmountsCard } from "@/app/(app)/partners/partner-amounts-card";
 import { PartnerConfidentialNotesCard } from "@/app/(app)/partners/partner-confidential-notes-card";
 import { PartnerInteractions } from "@/app/(app)/partners/partner-interactions";
@@ -67,6 +68,7 @@ export default async function PartnerDetailPage({ params }: { params: Promise<{ 
 
   return (
     <div className="flex flex-col gap-6">
+      <BackLink href="/partners" label="Retour aux partenaires" />
       <PartnerDetailHeader partner={partner} />
 
       <Tabs defaultValue="info" className="flex flex-col gap-4">

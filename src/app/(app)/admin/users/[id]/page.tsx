@@ -6,6 +6,7 @@ import { UserDetailHeader } from "@/app/(app)/admin/users/[id]/user-detail-heade
 import { PermissionMatrix } from "@/app/(app)/admin/users/[id]/permission-matrix";
 import { PreviewAccessDialog } from "@/app/(app)/admin/users/[id]/preview-access-dialog";
 import { CopyPermissionsDialog } from "@/app/(app)/admin/users/[id]/copy-permissions-dialog";
+import { BackLink } from "@/components/shared/back-link";
 
 export default async function UserDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -55,6 +56,7 @@ export default async function UserDetailPage({ params }: { params: Promise<{ id:
 
   return (
     <div className="flex flex-col gap-6">
+      <BackLink href="/admin/users" label="Retour aux utilisateurs" />
       <UserDetailHeader
         member={member}
         profile={profile}

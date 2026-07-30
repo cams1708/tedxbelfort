@@ -6,6 +6,7 @@ import { can } from "@/lib/permissions/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SpeakerDetailHeader } from "@/app/(app)/speakers/[id]/speaker-detail-header";
+import { BackLink } from "@/components/shared/back-link";
 import { SpeakerPrivateCard } from "@/app/(app)/speakers/speaker-private-card";
 import { SpeakerChecklist } from "@/app/(app)/speakers/speaker-checklist";
 import { SpeakerTimeline } from "@/app/(app)/speakers/speaker-timeline";
@@ -42,6 +43,7 @@ export default async function SpeakerDetailPage({ params }: { params: Promise<{ 
 
   return (
     <div className="flex flex-col gap-6">
+      <BackLink href="/speakers" label="Retour aux speakers" />
       <SpeakerDetailHeader speaker={speaker} />
 
       <Tabs defaultValue="info" className="flex flex-col gap-4">
