@@ -25,6 +25,18 @@ export async function createBudgetCategoryAction(formData: FormData): Promise<Ac
   return { success: true };
 }
 
+export async function updateBudgetCategoryAction(categoryId: string, formData: FormData): Promise<ActionState> {
+  const parsed = budgetCategorySchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Formulaire invalide" };
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("budget_categories").update(parsed.data).eq("id", categoryId);
+  if (error) return { error: "Impossible de modifier la catégorie (" + error.message + ")" };
+
+  revalidatePath("/budget");
+  return { success: true };
+}
+
 export async function createTransactionAction(formData: FormData): Promise<ActionState> {
   const eventId = await resolveCurrentEventId();
   if (!eventId) return { error: "Aucun événement sélectionné." };

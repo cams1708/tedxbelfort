@@ -147,7 +147,20 @@ export default async function BudgetPage() {
             ) : (
               categoryList.map((cat) => (
                 <TableRow key={cat.id}>
-                  <TableCell className="font-medium">{cat.name}</TableCell>
+                  <TableCell className="font-medium">
+                    {canEdit ? (
+                      <CategoryFormDialog
+                        category={cat}
+                        trigger={
+                          <button type="button" className="text-left font-medium hover:underline">
+                            {cat.name}
+                          </button>
+                        }
+                      />
+                    ) : (
+                      cat.name
+                    )}
+                  </TableCell>
                   <TableCell>{cat.kind === "revenue" ? "Recette" : "Dépense"}</TableCell>
                   <TableCell>{formatAmount(Number(cat.forecast_amount))}</TableCell>
                 </TableRow>

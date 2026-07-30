@@ -758,7 +758,7 @@ export interface Database {
       budget_categories: Table<
         { id: string; event_id: string; name: string; kind: TransactionType; forecast_amount: number; created_at: string },
         { id?: string; event_id: string; name: string; kind: TransactionType; forecast_amount?: number },
-        Partial<{ name: string; forecast_amount: number }>
+        Partial<{ name: string; kind: TransactionType; forecast_amount: number }>
       >;
       financial_transactions: Table<
         {
