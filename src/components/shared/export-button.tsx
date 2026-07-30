@@ -29,7 +29,7 @@ export function ExportButton<T>({
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuItem onClick={() => downloadCsv(`${filename}.csv`, rows, columns)}>CSV</DropdownMenuItem>
-        <DropdownMenuItem onClick={() => downloadXlsx(`${filename}.xlsx`, sheetName, rows, columns)}>
+        <DropdownMenuItem onClick={() => void downloadXlsx(`${filename}.xlsx`, sheetName, rows, columns)}>
           Excel (.xlsx)
         </DropdownMenuItem>
       </DropdownMenuContent>

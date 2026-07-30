@@ -1,7 +1,12 @@
-import * as XLSX from "xlsx";
 import { getRawValue, type ExportColumn } from "@/lib/export/csv";
 
-export function downloadXlsx<T>(filename: string, sheetName: string, rows: T[], columns: ExportColumn<T>[]): void {
+/**
+ * Loaded only on click, inside the browser — never at module top-level.
+ * A static import would still run xlsx's module-init code during Next.js's
+ * server-side render of the client component tree, not just in-browser.
+ */
+export async function downloadXlsx<T>(filename: string, sheetName: string, rows: T[], columns: ExportColumn<T>[]): Promise<void> {
+  const XLSX = await import("xlsx");
   const data = rows.map((row) => Object.fromEntries(columns.map((c) => [c.label, getRawValue(row, c) ?? ""])));
   const worksheet = XLSX.utils.json_to_sheet(data);
   const workbook = XLSX.utils.book_new();
