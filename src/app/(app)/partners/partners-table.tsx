@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   type ColumnDef,
@@ -20,11 +20,29 @@ import { PARTNER_PRIORITY_LABELS, PARTNER_STATUS_LABELS } from "@/lib/labels";
 import { usePermissions } from "@/lib/permissions/context";
 import type { PartnerRow } from "@/app/(app)/partners/types";
 
+const STORAGE_KEY = "partners-table-state";
+
+function readStoredState(): { sorting: SortingState; globalFilter: string } {
+  if (typeof window === "undefined") return { sorting: [], globalFilter: "" };
+  try {
+    const raw = sessionStorage.getItem(STORAGE_KEY);
+    if (!raw) return { sorting: [], globalFilter: "" };
+    const parsed = JSON.parse(raw);
+    return { sorting: parsed.sorting ?? [], globalFilter: parsed.globalFilter ?? "" };
+  } catch {
+    return { sorting: [], globalFilter: "" };
+  }
+}
+
 export function PartnersTable({ partners, currency }: { partners: PartnerRow[]; currency: string }) {
   const { can } = usePermissions();
   const canViewAmounts = can("partners", "view_amounts");
-  const [sorting, setSorting] = useState<SortingState>([]);
-  const [globalFilter, setGlobalFilter] = useState("");
+  const [sorting, setSorting] = useState<SortingState>(() => readStoredState().sorting);
+  const [globalFilter, setGlobalFilter] = useState(() => readStoredState().globalFilter);
+
+  useEffect(() => {
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ sorting, globalFilter }));
+  }, [sorting, globalFilter]);
 
   const formatAmount = (value: number | null) =>
     value === null ? "—" : new Intl.NumberFormat("fr-FR", { style: "currency", currency }).format(value);

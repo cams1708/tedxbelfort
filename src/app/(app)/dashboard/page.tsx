@@ -24,9 +24,47 @@ export default async function DashboardPage() {
 
   const { data: event } = await supabase.from("events").select("*").eq("id", eventId).single();
 
-  const [partnersCount, speakersCount, overdueTasksCount, followupsCount, invoicesPendingCount] = await Promise.all([
+  let isPartnersLead = hasAll;
+  if (!hasAll) {
+    const [{ data: member }, { data: teamMember }] = await Promise.all([
+      supabase
+        .from("event_members")
+        .select("role_id")
+        .eq("event_id", eventId)
+        .eq("user_id", profile.id)
+        .eq("status", "active")
+        .maybeSingle(),
+      supabase.from("team_members").select("pole").eq("event_id", eventId).eq("profile_id", profile.id).maybeSingle(),
+    ]);
+    const { data: role } = member
+      ? await supabase.from("roles").select("slug").eq("id", member.role_id).maybeSingle()
+      : { data: null };
+    isPartnersLead = role?.slug === "vice_president" || teamMember?.pole === "partners";
+  }
+
+  const closedPartnerStatuses = "(confirmed,contract_signed,declined,abandoned)";
+
+  const [
+    confirmedPartnersCount,
+    pendingPartnersCount,
+    speakersCount,
+    overdueTasksCount,
+    followupsCount,
+    invoicesPendingCount,
+  ] = await Promise.all([
     canSee("partners")
-      ? supabase.from("partners").select("id", { count: "exact", head: true }).eq("event_id", eventId)
+      ? supabase
+          .from("partners")
+          .select("id", { count: "exact", head: true })
+          .eq("event_id", eventId)
+          .in("status", ["confirmed", "contract_signed"])
+      : null,
+    canSee("partners") && isPartnersLead
+      ? supabase
+          .from("partners")
+          .select("id", { count: "exact", head: true })
+          .eq("event_id", eventId)
+          .not("status", "in", closedPartnerStatuses)
       : null,
     canSee("speakers")
       ? supabase.from("speakers").select("id", { count: "exact", head: true }).eq("event_id", eventId)
@@ -111,8 +149,11 @@ export default async function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {partnersCount ? (
-          <StatCard label="Partenaires" value={String(partnersCount.count ?? 0)} icon={Handshake} />
+        {confirmedPartnersCount ? (
+          <StatCard label="Partenaires confirmés" value={String(confirmedPartnersCount.count ?? 0)} icon={Handshake} />
+        ) : null}
+        {pendingPartnersCount ? (
+          <StatCard label="Partenaires en cours" value={String(pendingPartnersCount.count ?? 0)} icon={Handshake} />
         ) : null}
         {sponsoringConfirmed !== null ? (
           <StatCard
