@@ -10,8 +10,12 @@ function Side({
   rows: CategoryComparisonRow[];
   formatAmount: (value: number) => string;
 }) {
-  const total = rows.reduce((s, r) => s + r.forecast, 0);
-  const totalReal = rows.reduce((s, r) => s + r.engaged + r.invoiced + r.paid, 0);
+  // Sub-category amounts are already rolled into their parent's own
+  // forecast/engaged/invoiced/paid figures (buildBudgetComparison does the
+  // rollup) — summing every row here would double-count them.
+  const topLevelRows = rows.filter((r) => !r.isSubCategory);
+  const total = topLevelRows.reduce((s, r) => s + r.forecast, 0);
+  const totalReal = topLevelRows.reduce((s, r) => s + r.engaged + r.invoiced + r.paid, 0);
 
   return (
     <div className="flex flex-col gap-2">
