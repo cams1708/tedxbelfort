@@ -3,14 +3,14 @@ import { createAdminClient } from "@/lib/supabase/server";
 
 /**
  * Generates due-date reminder notifications (tasks due soon/overdue,
- * follow-ups due, invoices approaching their due date). Not triggered
- * automatically — wire an external scheduler (Vercel Cron, GitHub Actions,
- * pg_cron, ...) to call this endpoint daily, sending
- * `Authorization: Bearer <CRON_SECRET>` matching the CRON_SECRET env var.
- * Without that env var configured, this route refuses all requests rather
- * than running unauthenticated.
+ * follow-ups due, invoices approaching/past their due date, budget
+ * overspend). Wired to Vercel Cron via vercel.json (which calls this with
+ * GET, not POST — kept both handlers so a manual/external trigger via POST
+ * still works too), sending `Authorization: Bearer <CRON_SECRET>` matching
+ * the CRON_SECRET env var. Without that env var configured, this route
+ * refuses all requests rather than running unauthenticated.
  */
-export async function POST(request: NextRequest) {
+async function handle(request: NextRequest) {
   const secret = process.env.CRON_SECRET;
   if (!secret) {
     return NextResponse.json({ error: "CRON_SECRET is not configured." }, { status: 501 });
@@ -29,3 +29,6 @@ export async function POST(request: NextRequest) {
 
   return NextResponse.json({ success: true });
 }
+
+export const GET = handle;
+export const POST = handle;

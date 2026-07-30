@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useActionDialog } from "@/hooks/use-action-dialog";
 import { createInvoiceAction, updateInvoiceAction } from "@/app/(app)/invoices/actions";
 import { Button } from "@/components/ui/button";
@@ -16,9 +17,13 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { INVOICE_STATUS_LABELS } from "@/lib/labels";
-import type { Tables } from "@/types/database.types";
+import { INVOICE_STATUS_LABELS, DOCUMENT_TYPE_LABELS } from "@/lib/labels";
+import type { Tables, DocumentType } from "@/types/database.types";
 import { PlusIcon } from "lucide-react";
+
+// "Payée" / "Partiellement payée" are now derived automatically from
+// recorded payments (see invoice-payments-dialog) — not a manual choice.
+const MANUAL_STATUS_VALUES = ["draft", "to_send", "sent", "pending", "overdue", "cancelled"] as const;
 
 export function InvoiceFormDialog({
   invoice,
@@ -31,6 +36,7 @@ export function InvoiceFormDialog({
 }) {
   const action = invoice ? updateInvoiceAction.bind(null, invoice.id) : createInvoiceAction;
   const { open, setOpen, error, isPending, handleAction } = useActionDialog(action);
+  const [documentType, setDocumentType] = useState<DocumentType>(invoice?.document_type ?? "invoice");
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -38,14 +44,16 @@ export function InvoiceFormDialog({
         render={
           trigger ?? (
             <Button>
-              <PlusIcon /> Nouvelle facture
+              <PlusIcon /> Nouveau document
             </Button>
           )
         }
       />
       <DialogContent className="max-h-[85vh] max-w-lg overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{invoice ? "Modifier la facture" : "Nouvelle facture"}</DialogTitle>
+          <DialogTitle>
+            {invoice ? `Modifier — ${DOCUMENT_TYPE_LABELS[invoice.document_type]}` : "Nouveau document financier"}
+          </DialogTitle>
         </DialogHeader>
         <form action={handleAction} className="flex flex-col gap-4">
           {error ? (
@@ -55,18 +63,37 @@ export function InvoiceFormDialog({
           ) : null}
           <div className="grid grid-cols-2 gap-4">
             <div className="flex flex-col gap-2">
-              <Label htmlFor="number">Numéro</Label>
-              <Input id="number" name="number" defaultValue={invoice?.number} required />
+              <Label>Type de document</Label>
+              <Select
+                name="document_type"
+                value={documentType}
+                onValueChange={(v) => typeof v === "string" && setDocumentType(v as DocumentType)}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(DOCUMENT_TYPE_LABELS).map(([value, label]) => (
+                    <SelectItem key={value} value={value}>
+                      {label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="flex flex-col gap-2">
-              <Label>Type</Label>
+              <Label htmlFor="number">Numéro</Label>
+              <Input id="number" value={invoice?.number ?? "Généré à la création"} disabled />
+            </div>
+            <div className="col-span-2 flex flex-col gap-2">
+              <Label>Sens</Label>
               <Select name="type" defaultValue={invoice?.type ?? "received_from_supplier"}>
                 <SelectTrigger className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="sent_to_partner">Envoyée à un partenaire</SelectItem>
-                  <SelectItem value="received_from_supplier">Reçue d’un prestataire</SelectItem>
+                  <SelectItem value="sent_to_partner">Envoyé à un partenaire</SelectItem>
+                  <SelectItem value="received_from_supplier">Reçu d’un prestataire</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -117,16 +144,21 @@ export function InvoiceFormDialog({
             </div>
             <div className="col-span-2 flex flex-col gap-2">
               <Label>Statut</Label>
-              <Select name="status" defaultValue={invoice?.status ?? "draft"}>
+              <Select name="status" defaultValue={invoice && invoice.status in INVOICE_STATUS_LABELS ? invoice.status : "draft"}>
                 <SelectTrigger className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {Object.entries(INVOICE_STATUS_LABELS).map(([value, meta]) => (
+                  {MANUAL_STATUS_VALUES.map((value) => (
                     <SelectItem key={value} value={value}>
-                      {meta.label}
+                      {INVOICE_STATUS_LABELS[value].label}
                     </SelectItem>
                   ))}
+                  {invoice && (invoice.status === "paid" || invoice.status === "partially_paid") ? (
+                    <SelectItem value={invoice.status} disabled>
+                      {INVOICE_STATUS_LABELS[invoice.status].label} (via paiements enregistrés)
+                    </SelectItem>
+                  ) : null}
                 </SelectContent>
               </Select>
             </div>
@@ -145,8 +177,11 @@ export function InvoiceFormDialog({
             <Textarea id="confidential_notes" name="confidential_notes" rows={2} defaultValue={invoice?.confidential_notes ?? ""} />
           </div>
           <p className="text-xs text-muted-foreground">
-            Passer le statut à « Payée » ajoute (ou met à jour) automatiquement le mouvement correspondant dans le
-            budget réel, dans la catégorie choisie ci-dessus.
+            {documentType === "quote" || documentType === "purchase_order"
+              ? "Les devis et bons de commande n'alimentent pas le budget réel — ils restent purement informatifs tant qu'aucune facture réelle n'est créée."
+              : documentType === "credit_note"
+                ? "Un avoir vient réduire automatiquement le montant de sa catégorie dans le budget réel."
+                : "Dès qu'elle quitte le statut brouillon, la facture alimente automatiquement le budget réel. Le statut « Payée »/« Partiellement payée » se met à jour tout seul dès qu'un paiement est enregistré."}
           </p>
           <DialogFooter>
             <Button type="submit" disabled={isPending}>

@@ -10,6 +10,7 @@ export const budgetCategorySchema = z.object({
   name: z.string().trim().min(1, "Nom requis"),
   kind: z.enum(["revenue", "expense"]),
   forecast_amount: z.coerce.number().nonnegative(),
+  parent_category_id: optionalText,
 });
 
 export const transactionSchema = z.object({
@@ -25,4 +26,5 @@ export const transactionSchema = z.object({
   status: z.enum(["planned", "engaged", "invoiced", "paid", "overdue", "cancelled"]),
   payment_method: z.enum(["bank_transfer", "check", "cash", "card", "other"]).optional(),
   confidential_comment: optionalText,
+  certainty: z.enum(["certain", "probable", "potential"]).default("certain"),
 });

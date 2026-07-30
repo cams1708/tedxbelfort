@@ -18,7 +18,10 @@ export async function createBudgetCategoryAction(formData: FormData): Promise<Ac
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Formulaire invalide" };
 
   const supabase = await createClient();
-  const { error } = await supabase.from("budget_categories").insert({ event_id: eventId, ...parsed.data });
+  const { parent_category_id, ...rest } = parsed.data;
+  const { error } = await supabase
+    .from("budget_categories")
+    .insert({ event_id: eventId, parent_category_id: parent_category_id || null, ...rest });
   if (error) return { error: "Impossible de créer la catégorie (" + error.message + ")" };
 
   revalidatePath("/budget");
@@ -30,7 +33,11 @@ export async function updateBudgetCategoryAction(categoryId: string, formData: F
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Formulaire invalide" };
 
   const supabase = await createClient();
-  const { error } = await supabase.from("budget_categories").update(parsed.data).eq("id", categoryId);
+  const { parent_category_id, ...rest } = parsed.data;
+  const { error } = await supabase
+    .from("budget_categories")
+    .update({ parent_category_id: parent_category_id || null, ...rest })
+    .eq("id", categoryId);
   if (error) return { error: "Impossible de modifier la catégorie (" + error.message + ")" };
 
   revalidatePath("/budget");

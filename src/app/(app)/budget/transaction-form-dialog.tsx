@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useActionDialog } from "@/hooks/use-action-dialog";
 import { createTransactionAction, updateTransactionAction } from "@/app/(app)/budget/actions";
 import { Button } from "@/components/ui/button";
@@ -16,8 +17,8 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { TRANSACTION_STATUS_LABELS } from "@/lib/labels";
-import type { Tables } from "@/types/database.types";
+import { TRANSACTION_STATUS_LABELS, CERTAINTY_LABELS } from "@/lib/labels";
+import type { Tables, TransactionType } from "@/types/database.types";
 import { PlusIcon } from "lucide-react";
 
 export function TransactionFormDialog({
@@ -31,6 +32,7 @@ export function TransactionFormDialog({
 }) {
   const action = transaction ? updateTransactionAction.bind(null, transaction.id) : createTransactionAction;
   const { open, setOpen, error, isPending, handleAction } = useActionDialog(action);
+  const [type, setType] = useState<TransactionType>(transaction?.type ?? "expense");
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -60,7 +62,7 @@ export function TransactionFormDialog({
           <div className="grid grid-cols-2 gap-4">
             <div className="flex flex-col gap-2">
               <Label>Type</Label>
-              <Select name="type" defaultValue={transaction?.type ?? "expense"}>
+              <Select name="type" value={type} onValueChange={(v) => typeof v === "string" && setType(v as TransactionType)}>
                 <SelectTrigger className="w-full">
                   <SelectValue />
                 </SelectTrigger>
@@ -130,6 +132,23 @@ export function TransactionFormDialog({
                 </SelectContent>
               </Select>
             </div>
+            {type === "revenue" ? (
+              <div className="flex flex-col gap-2">
+                <Label>Certitude de la recette</Label>
+                <Select name="certainty" defaultValue={transaction?.certainty ?? "certain"}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(CERTAINTY_LABELS).map(([value, label]) => (
+                      <SelectItem key={value} value={value}>
+                        {label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            ) : null}
             <div className="flex flex-col gap-2">
               <Label>Moyen de paiement</Label>
               <Select name="payment_method" defaultValue={transaction?.payment_method ?? undefined}>

@@ -13,6 +13,7 @@ import {
   Settings,
   ShieldCheck,
   History,
+  Landmark,
   type LucideIcon,
 } from "lucide-react";
 
@@ -32,8 +33,10 @@ export const PRIMARY_NAV: NavItem[] = [
   { href: "/tasks", label: "Tâches", icon: CheckSquare, module: "tasks", action: "view" },
   { href: "/followups", label: "Relances", icon: BellRing, module: "followups", action: "view" },
   { href: "/calendar", label: "Calendrier", icon: Calendar, module: "calendar", action: "view" },
+  { href: "/finance-summary", label: "Synthèse financière", icon: Wallet, module: "budget", action: "view" },
   { href: "/budget", label: "Budget", icon: Wallet, module: "budget", action: "view" },
   { href: "/invoices", label: "Factures", icon: Receipt, module: "invoices", action: "view" },
+  { href: "/subsidies", label: "Subventions", icon: Landmark, module: "subsidies", action: "view" },
   { href: "/documents", label: "Documents", icon: FolderClosed, module: "documents", action: "view" },
 ];
 

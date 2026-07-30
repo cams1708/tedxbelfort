@@ -10,6 +10,9 @@ import type {
   DocumentConfidentiality,
   TeamPole,
   ContributionType,
+  Certainty,
+  DocumentType,
+  SubsidyStatus,
 } from "@/types/database.types";
 
 export type BadgeTone = "neutral" | "info" | "success" | "warning" | "danger";
@@ -95,6 +98,27 @@ export const TRANSACTION_STATUS_LABELS: Record<TransactionStatus, { label: strin
   paid: { label: "Payé", tone: "success" },
   overdue: { label: "En retard", tone: "danger" },
   cancelled: { label: "Annulé", tone: "neutral" },
+};
+
+export const CERTAINTY_LABELS: Record<Certainty, string> = {
+  certain: "Certaine",
+  probable: "Probable",
+  potential: "Potentielle",
+};
+
+export const DOCUMENT_TYPE_LABELS: Record<DocumentType, string> = {
+  quote: "Devis",
+  purchase_order: "Bon de commande",
+  invoice: "Facture",
+  credit_note: "Avoir",
+};
+
+export const SUBSIDY_STATUS_LABELS: Record<SubsidyStatus, { label: string; tone: BadgeTone }> = {
+  requested: { label: "Demandée", tone: "neutral" },
+  granted: { label: "Accordée", tone: "info" },
+  partially_received: { label: "Partiellement versée", tone: "warning" },
+  received: { label: "Versée", tone: "success" },
+  declined: { label: "Refusée", tone: "danger" },
 };
 
 export const FOLLOWUP_STATUS_LABELS: Record<FollowupStatus, { label: string; tone: BadgeTone }> = {

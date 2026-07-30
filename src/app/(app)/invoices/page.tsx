@@ -2,14 +2,14 @@ import { createClient } from "@/lib/supabase/server";
 import { resolveCurrentEventId } from "@/lib/events/current-event";
 import { getCurrentUser } from "@/lib/permissions/server";
 import { can } from "@/lib/permissions/types";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { StatusBadge } from "@/components/shared/status-badge";
 import { RequestAccessButton } from "@/components/shared/request-access-button";
 import { Can } from "@/lib/permissions/context";
+import { ExportButton } from "@/components/shared/export-button";
 import { InvoiceFormDialog } from "@/app/(app)/invoices/invoice-form-dialog";
-import { InvoiceDownloadButton } from "@/app/(app)/invoices/invoice-download-button";
-import { InvoiceDeleteButton } from "@/app/(app)/invoices/invoice-delete-button";
-import { INVOICE_STATUS_LABELS } from "@/lib/labels";
+import { InvoicesView } from "@/app/(app)/invoices/invoices-view";
+import { INVOICE_STATUS_LABELS, DOCUMENT_TYPE_LABELS } from "@/lib/labels";
+import type { ExportColumn } from "@/lib/export/csv";
+import type { Tables } from "@/types/database.types";
 
 export default async function InvoicesPage() {
   const eventId = await resolveCurrentEventId();
@@ -21,6 +21,7 @@ export default async function InvoicesPage() {
   const canView = hasAll || can(currentUser.permissions, "invoices", "view");
   const canEdit = hasAll || can(currentUser.permissions, "invoices", "edit");
   const canDelete = hasAll || can(currentUser.permissions, "invoices", "delete");
+  const canExport = hasAll || can(currentUser.permissions, "invoices", "export");
 
   if (!canView) {
     return (
@@ -41,9 +42,40 @@ export default async function InvoicesPage() {
 
   const invoiceList = invoices ?? [];
   const categoryList = categories ?? [];
-  const categoryNameById = new Map(categoryList.map((c) => [c.id, c.name]));
   const currency = event?.currency ?? "EUR";
-  const formatAmount = (value: number) => new Intl.NumberFormat("fr-FR", { style: "currency", currency }).format(value);
+
+  const invoiceIds = invoiceList
+    .filter((i) => i.document_type === "invoice" || i.document_type === "credit_note")
+    .map((i) => i.id);
+
+  const [{ data: payments }, { data: effectiveAmounts }] =
+    invoiceIds.length > 0
+      ? await Promise.all([
+          supabase.from("invoice_payments").select("*").in("invoice_id", invoiceIds).order("payment_date", { ascending: false }),
+          supabase.from("invoice_effective_amounts").select("*").in("invoice_id", invoiceIds),
+        ])
+      : [{ data: [] as Tables<"invoice_payments">[] }, { data: [] as Tables<"invoice_effective_amounts">[] }];
+
+  const paymentsByInvoiceId = new Map<string, Tables<"invoice_payments">[]>();
+  for (const p of payments ?? []) {
+    paymentsByInvoiceId.set(p.invoice_id, [...(paymentsByInvoiceId.get(p.invoice_id) ?? []), p]);
+  }
+  const effectiveAmountsByInvoiceId = new Map(
+    (effectiveAmounts ?? []).map((a) => [a.invoice_id, { totalPaid: Number(a.total_paid), remaining: Number(a.remaining) }]),
+  );
+
+  const categoryNameById = new Map(categoryList.map((c) => [c.id, c.name]));
+  const exportColumns: ExportColumn<Tables<"invoices">>[] = [
+    { label: "Numéro", value: (i) => i.number },
+    { label: "Type", value: (i) => DOCUMENT_TYPE_LABELS[i.document_type] },
+    { label: "Titre", value: (i) => i.title },
+    { label: "Catégorie", value: (i) => (i.category_id ? (categoryNameById.get(i.category_id) ?? "—") : "—") },
+    { label: "Sens", value: (i) => (i.type === "sent_to_partner" ? "Envoyé" : "Reçu") },
+    { label: "Montant HT", value: (i) => Number(i.amount) },
+    { label: "TVA", value: (i) => Number(i.tva) },
+    { label: "Statut", value: (i) => INVOICE_STATUS_LABELS[i.status]?.label ?? i.status },
+    { label: "Échéance", value: (i) => i.due_date ?? "" },
+  ];
 
   return (
     <div className="flex flex-col gap-6">
@@ -51,79 +83,28 @@ export default async function InvoicesPage() {
         <div>
           <h1 className="text-2xl font-semibold">Factures</h1>
           <p className="text-sm text-muted-foreground">
-            Factures envoyées et reçues. Une facture marquée « Payée » alimente automatiquement le budget réel.
+            Devis, bons de commande, factures et avoirs — envoyés aux partenaires ou reçus des prestataires.
           </p>
         </div>
-        <Can module="invoices" action="create">
-          <InvoiceFormDialog categories={categoryList} />
-        </Can>
+        <div className="flex items-center gap-2">
+          {canExport ? (
+            <ExportButton filename="factures" sheetName="Factures" rows={invoiceList} columns={exportColumns} />
+          ) : null}
+          <Can module="invoices" action="create">
+            <InvoiceFormDialog categories={categoryList} />
+          </Can>
+        </div>
       </div>
 
-      <div className="rounded-lg border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Numéro</TableHead>
-              <TableHead>Titre</TableHead>
-              <TableHead>Catégorie</TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead>Montant</TableHead>
-              <TableHead>Statut</TableHead>
-              <TableHead>Échéance</TableHead>
-              <TableHead className="text-right">Justificatif</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {invoiceList.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={9} className="h-24 text-center text-muted-foreground">
-                  Aucune facture pour le moment.
-                </TableCell>
-              </TableRow>
-            ) : (
-              invoiceList.map((invoice) => {
-                const meta = INVOICE_STATUS_LABELS[invoice.status];
-                return (
-                  <TableRow key={invoice.id}>
-                    <TableCell className="font-mono text-xs">{invoice.number}</TableCell>
-                    <TableCell>
-                      {canEdit ? (
-                        <InvoiceFormDialog
-                          invoice={invoice}
-                          categories={categoryList}
-                          trigger={
-                            <button type="button" className="text-left font-medium hover:underline">
-                              {invoice.title}
-                            </button>
-                          }
-                        />
-                      ) : (
-                        <span className="font-medium">{invoice.title}</span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {invoice.category_id ? (categoryNameById.get(invoice.category_id) ?? "—") : "—"}
-                    </TableCell>
-                    <TableCell>{invoice.type === "sent_to_partner" ? "Envoyée" : "Reçue"}</TableCell>
-                    <TableCell>{formatAmount(Number(invoice.amount))}</TableCell>
-                    <TableCell>
-                      <StatusBadge label={meta.label} tone={meta.tone} />
-                    </TableCell>
-                    <TableCell>{invoice.due_date ? new Date(invoice.due_date).toLocaleDateString("fr-FR") : "—"}</TableCell>
-                    <TableCell className="text-right">
-                      {invoice.file_document_id ? <InvoiceDownloadButton documentId={invoice.file_document_id} /> : "—"}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {canDelete ? <InvoiceDeleteButton invoiceId={invoice.id} /> : null}
-                    </TableCell>
-                  </TableRow>
-                );
-              })
-            )}
-          </TableBody>
-        </Table>
-      </div>
+      <InvoicesView
+        invoices={invoiceList}
+        categories={categoryList}
+        paymentsByInvoiceId={paymentsByInvoiceId}
+        effectiveAmountsByInvoiceId={effectiveAmountsByInvoiceId}
+        currency={currency}
+        canEdit={canEdit}
+        canDelete={canDelete}
+      />
     </div>
   );
 }

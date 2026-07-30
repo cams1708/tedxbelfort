@@ -51,19 +51,28 @@ export async function createInvoiceAction(formData: FormData): Promise<ActionSta
   const parsed = invoiceFormSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Formulaire invalide" };
 
-  const attachment = await attachInvoiceFile(eventId, parsed.data.number, formData);
-  if (attachment.error) return { error: attachment.error };
-
   const supabase = await createClient();
-  const { due_date, category_id, ...rest } = parsed.data;
-  const { error } = await supabase.from("invoices").insert({
-    event_id: eventId,
-    due_date: due_date || null,
-    category_id: category_id || null,
-    file_document_id: attachment.documentId ?? null,
-    ...rest,
-  });
-  if (error) return { error: "Impossible de créer la facture (" + error.message + ")" };
+  // number is intentionally omitted — the assign_invoice_number trigger fills
+  // it in. The row must exist before we know the generated number, so the
+  // file (whose display name embeds that number) is attached afterward.
+  const { number: _number, due_date, category_id, ...rest } = parsed.data;
+  const { data: invoice, error } = await supabase
+    .from("invoices")
+    .insert({
+      event_id: eventId,
+      due_date: due_date || null,
+      category_id: category_id || null,
+      ...rest,
+    })
+    .select("id, number")
+    .single();
+  if (error || !invoice) return { error: "Impossible de créer la facture (" + (error?.message ?? "erreur inconnue") + ")" };
+
+  const attachment = await attachInvoiceFile(eventId, invoice.number, formData);
+  if (attachment.error) return { error: attachment.error };
+  if (attachment.documentId) {
+    await supabase.from("invoices").update({ file_document_id: attachment.documentId }).eq("id", invoice.id);
+  }
 
   revalidatePath("/invoices");
   return { success: true };
@@ -76,11 +85,15 @@ export async function updateInvoiceAction(invoiceId: string, formData: FormData)
   const parsed = invoiceFormSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Formulaire invalide" };
 
-  const attachment = await attachInvoiceFile(eventId, parsed.data.number, formData);
+  const supabase = await createClient();
+  const { data: existing } = await supabase.from("invoices").select("number").eq("id", invoiceId).single();
+
+  // number is never part of the update payload — it's generated once at
+  // creation and must never be overwritten by a re-submitted form value.
+  const { number: _number, due_date, category_id, ...rest } = parsed.data;
+  const attachment = existing ? await attachInvoiceFile(eventId, existing.number, formData) : {};
   if (attachment.error) return { error: attachment.error };
 
-  const supabase = await createClient();
-  const { due_date, category_id, ...rest } = parsed.data;
   const { error } = await supabase
     .from("invoices")
     .update({
