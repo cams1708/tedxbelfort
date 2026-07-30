@@ -33,9 +33,18 @@ const TYPE_LABELS: Record<string, string> = {
   d_day: "Jour J",
 };
 
-export function CalendarFormDialog({ defaultDate }: { defaultDate?: string }) {
+export function CalendarFormDialog({
+  defaultDate,
+  members,
+}: {
+  defaultDate?: string;
+  members: { id: string; full_name: string }[];
+}) {
   const { open, setOpen, error, isPending, handleAction } = useActionDialog(createCalendarItemAction);
   const [allDay, setAllDay] = useState(false);
+  const [visibility, setVisibility] = useState("all");
+  const [startTime, setStartTime] = useState("09:00");
+  const [endTime, setEndTime] = useState("");
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -96,17 +105,29 @@ export function CalendarFormDialog({ defaultDate }: { defaultDate?: string }) {
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
                 <Label htmlFor="start_time">Heure de début</Label>
-                <Input id="start_time" name="start_time" type="time" defaultValue="09:00" />
+                <Input
+                  id="start_time"
+                  name="start_time"
+                  type="time"
+                  value={startTime}
+                  onChange={(e) => setStartTime(e.target.value)}
+                />
               </div>
               <div className="flex flex-col gap-2">
                 <Label htmlFor="end_time">Heure de fin</Label>
-                <Input id="end_time" name="end_time" type="time" />
+                <Input
+                  id="end_time"
+                  name="end_time"
+                  type="time"
+                  value={endTime}
+                  onChange={(e) => setEndTime(e.target.value)}
+                />
               </div>
             </div>
           ) : null}
           <div className="flex flex-col gap-2">
             <Label>Visibilité</Label>
-            <Select name="visibility" defaultValue="all">
+            <Select name="visibility" value={visibility} onValueChange={(v) => typeof v === "string" && setVisibility(v)}>
               <SelectTrigger className="w-full">
                 <SelectValue />
               </SelectTrigger>
@@ -117,6 +138,23 @@ export function CalendarFormDialog({ defaultDate }: { defaultDate?: string }) {
               </SelectContent>
             </Select>
           </div>
+          {visibility === "assigned" ? (
+            <div className="flex flex-col gap-2">
+              <Label>Personnes assignées</Label>
+              {members.length === 0 ? (
+                <p className="text-xs text-muted-foreground">Aucun membre avec un compte sur cet événement.</p>
+              ) : (
+                <div className="flex max-h-40 flex-col gap-2 overflow-y-auto rounded-lg border p-2">
+                  {members.map((m) => (
+                    <label key={m.id} className="flex items-center gap-2 text-sm">
+                      <Checkbox name="attendee_ids" value={m.id} />
+                      {m.full_name}
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : null}
           <DialogFooter>
             <Button type="submit" disabled={isPending}>
               {isPending ? "Création…" : "Créer"}

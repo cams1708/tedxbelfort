@@ -11,10 +11,12 @@ export function CalendarView({
   items,
   currentUserId,
   attendeeItemIds,
+  members,
 }: {
   items: Tables<"calendar_items">[];
   currentUserId: string;
   attendeeItemIds: Set<string>;
+  members: { id: string; full_name: string }[];
 }) {
   const [view, setView] = useState("all");
 
@@ -31,7 +33,7 @@ export function CalendarView({
           <TabsTrigger value="mine">Mon calendrier</TabsTrigger>
         </TabsList>
         <Can module="calendar" action="create">
-          <CalendarFormDialog />
+          <CalendarFormDialog members={members} />
         </Can>
       </div>
       <TabsContent value="all">

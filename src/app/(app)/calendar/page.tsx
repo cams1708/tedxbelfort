@@ -32,13 +32,29 @@ export default async function CalendarPage() {
 
   const attendeeItemIds = new Set((attendeeRows ?? []).map((a) => a.calendar_item_id));
 
+  const { data: eventMembers } = await supabase
+    .from("event_members")
+    .select("user_id")
+    .eq("event_id", eventId)
+    .eq("status", "active");
+  const memberIds = (eventMembers ?? []).map((m) => m.user_id);
+  const { data: memberProfiles } =
+    memberIds.length > 0
+      ? await supabase.from("profiles").select("id, full_name").in("id", memberIds).order("full_name")
+      : { data: [] as { id: string; full_name: string }[] };
+
   return (
     <div className="flex flex-col gap-6">
       <div>
         <h1 className="text-2xl font-semibold">Calendrier</h1>
         <p className="text-sm text-muted-foreground">Réunions, échéances, rendez-vous et jour J.</p>
       </div>
-      <CalendarView items={itemList} currentUserId={currentUser.profile.id} attendeeItemIds={attendeeItemIds} />
+      <CalendarView
+        items={itemList}
+        currentUserId={currentUser.profile.id}
+        attendeeItemIds={attendeeItemIds}
+        members={memberProfiles ?? []}
+      />
     </div>
   );
 }
