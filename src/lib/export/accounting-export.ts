@@ -1,4 +1,4 @@
-import { downloadCsv, type ExportColumn } from "@/lib/export/csv";
+import { downloadCsv, prepareExportRows, type ExportColumn } from "@/lib/export/csv";
 import { TRANSACTION_STATUS_LABELS } from "@/lib/labels";
 import type { Tables } from "@/types/database.types";
 
@@ -50,5 +50,6 @@ export function downloadAccountingExport(
   const rows = transactions
     .filter((t) => t.status !== "cancelled")
     .map((t) => toAccountingRow(t, t.category_id ? (categoryNameById.get(t.category_id) ?? "—") : "—"));
-  downloadCsv(filename, rows, columns);
+  const { headers, data } = prepareExportRows(rows, columns);
+  downloadCsv(filename, headers, data);
 }

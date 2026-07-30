@@ -3,8 +3,24 @@ export interface ExportColumn<T> {
   value: (row: T) => string | number | null | undefined;
 }
 
-export function getRawValue<T>(row: T, col: ExportColumn<T>): string | number | null | undefined {
-  return col.value(row);
+export type ExportRow = Record<string, string | number>;
+
+/**
+ * Server-side only: turns typed rows + column definitions (which carry
+ * functions) into plain, serializable {headers, data} — functions can't be
+ * passed as props from a Server Component to a Client Component, so this
+ * must run before the result ever reaches one.
+ */
+export function prepareExportRows<T>(rows: T[], columns: ExportColumn<T>[]): { headers: string[]; data: ExportRow[] } {
+  const headers = columns.map((c) => c.label);
+  const data = rows.map((row) => {
+    const obj: ExportRow = {};
+    for (const c of columns) {
+      obj[c.label] = c.value(row) ?? "";
+    }
+    return obj;
+  });
+  return { headers, data };
 }
 
 function escapeCsvCell(value: string): string {
@@ -19,12 +35,10 @@ function escapeCsvCell(value: string): string {
  * decimal separator, so a comma-delimited CSV opens with garbled columns.
  * UTF-8 BOM prefix avoids mojibake on accented characters.
  */
-export function toCsv<T>(rows: T[], columns: ExportColumn<T>[]): string {
-  const header = columns.map((c) => escapeCsvCell(c.label)).join(";");
-  const lines = rows.map((row) =>
-    columns.map((c) => escapeCsvCell(String(getRawValue(row, c) ?? ""))).join(";"),
-  );
-  return [header, ...lines].join("\r\n");
+export function toCsv(headers: string[], data: ExportRow[]): string {
+  const headerLine = headers.map(escapeCsvCell).join(";");
+  const lines = data.map((row) => headers.map((h) => escapeCsvCell(String(row[h] ?? ""))).join(";"));
+  return [headerLine, ...lines].join("\r\n");
 }
 
 function triggerDownload(blob: Blob, filename: string): void {
@@ -38,8 +52,8 @@ function triggerDownload(blob: Blob, filename: string): void {
   URL.revokeObjectURL(url);
 }
 
-export function downloadCsv<T>(filename: string, rows: T[], columns: ExportColumn<T>[]): void {
-  const csv = toCsv(rows, columns);
+export function downloadCsv(filename: string, headers: string[], data: ExportRow[]): void {
+  const csv = toCsv(headers, data);
   const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8;" });
   triggerDownload(blob, filename);
 }

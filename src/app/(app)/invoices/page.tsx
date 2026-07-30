@@ -8,7 +8,7 @@ import { ExportButton } from "@/components/shared/export-button";
 import { InvoiceFormDialog } from "@/app/(app)/invoices/invoice-form-dialog";
 import { InvoicesView } from "@/app/(app)/invoices/invoices-view";
 import { INVOICE_STATUS_LABELS, DOCUMENT_TYPE_LABELS } from "@/lib/labels";
-import type { ExportColumn } from "@/lib/export/csv";
+import { prepareExportRows, type ExportColumn } from "@/lib/export/csv";
 import type { Tables } from "@/types/database.types";
 
 export default async function InvoicesPage() {
@@ -76,6 +76,7 @@ export default async function InvoicesPage() {
     { label: "Statut", value: (i) => INVOICE_STATUS_LABELS[i.status]?.label ?? i.status },
     { label: "Échéance", value: (i) => i.due_date ?? "" },
   ];
+  const invoiceExport = prepareExportRows(invoiceList, exportColumns);
 
   return (
     <div className="flex flex-col gap-6">
@@ -88,7 +89,7 @@ export default async function InvoicesPage() {
         </div>
         <div className="flex items-center gap-2">
           {canExport ? (
-            <ExportButton filename="factures" sheetName="Factures" rows={invoiceList} columns={exportColumns} />
+            <ExportButton filename="factures" sheetName="Factures" headers={invoiceExport.headers} data={invoiceExport.data} />
           ) : null}
           <Can module="invoices" action="create">
             <InvoiceFormDialog categories={categoryList} />

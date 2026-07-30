@@ -7,20 +7,20 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { downloadCsv, type ExportColumn } from "@/lib/export/csv";
+import { downloadCsv, type ExportRow } from "@/lib/export/csv";
 import { downloadXlsx } from "@/lib/export/xlsx";
 import { Download } from "lucide-react";
 
-export function ExportButton<T>({
+export function ExportButton({
   filename,
   sheetName,
-  rows,
-  columns,
+  headers,
+  data,
 }: {
   filename: string;
   sheetName: string;
-  rows: T[];
-  columns: ExportColumn<T>[];
+  headers: string[];
+  data: ExportRow[];
 }) {
   return (
     <DropdownMenu>
@@ -28,8 +28,8 @@ export function ExportButton<T>({
         <Download className="size-3.5" /> Exporter
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={() => downloadCsv(`${filename}.csv`, rows, columns)}>CSV</DropdownMenuItem>
-        <DropdownMenuItem onClick={() => void downloadXlsx(`${filename}.xlsx`, sheetName, rows, columns)}>
+        <DropdownMenuItem onClick={() => downloadCsv(`${filename}.csv`, headers, data)}>CSV</DropdownMenuItem>
+        <DropdownMenuItem onClick={() => void downloadXlsx(`${filename}.xlsx`, sheetName, headers, data)}>
           Excel (.xlsx)
         </DropdownMenuItem>
       </DropdownMenuContent>

@@ -20,7 +20,7 @@ import { ExportButton } from "@/components/shared/export-button";
 import { TRANSACTION_STATUS_LABELS } from "@/lib/labels";
 import { buildBudgetComparison } from "@/lib/finance/comparison";
 import { buildCashflowProjection } from "@/lib/finance/cashflow";
-import type { ExportColumn } from "@/lib/export/csv";
+import { prepareExportRows, type ExportColumn } from "@/lib/export/csv";
 import type { Tables } from "@/types/database.types";
 import { Wallet, TrendingUp, TrendingDown, AlertTriangle } from "lucide-react";
 
@@ -132,6 +132,8 @@ export default async function BudgetPage() {
     { label: "Type", value: (c) => (c.kind === "revenue" ? "Recette" : "Dépense") },
     { label: "Prévisionnel", value: (c) => Number(c.forecast_amount) },
   ];
+  const transactionExport = prepareExportRows(transactionList, transactionColumns);
+  const categoryExport = prepareExportRows(categoryList, categoryColumns);
 
   return (
     <div className="flex flex-col gap-6">
@@ -204,7 +206,12 @@ export default async function BudgetPage() {
             <h2 className="text-lg font-semibold">Catégories</h2>
             <div className="flex items-center gap-2">
               {canExport ? (
-                <ExportButton filename="categories-budget" sheetName="Catégories" rows={categoryList} columns={categoryColumns} />
+                <ExportButton
+                  filename="categories-budget"
+                  sheetName="Catégories"
+                  headers={categoryExport.headers}
+                  data={categoryExport.data}
+                />
               ) : null}
               <Can module="budget" action="edit">
                 <CategoryFormDialog categories={categoryList} />
@@ -260,8 +267,8 @@ export default async function BudgetPage() {
               <ExportButton
                 filename="mouvements-financiers"
                 sheetName="Mouvements"
-                rows={transactionList}
-                columns={transactionColumns}
+                headers={transactionExport.headers}
+                data={transactionExport.data}
               />
             ) : null}
           </div>

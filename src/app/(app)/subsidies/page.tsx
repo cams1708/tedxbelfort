@@ -10,7 +10,7 @@ import { ExportButton } from "@/components/shared/export-button";
 import { SubsidyFormDialog } from "@/app/(app)/subsidies/subsidy-form-dialog";
 import { SubsidyDeleteButton } from "@/app/(app)/subsidies/subsidy-delete-button";
 import { SUBSIDY_STATUS_LABELS } from "@/lib/labels";
-import type { ExportColumn } from "@/lib/export/csv";
+import { prepareExportRows, type ExportColumn } from "@/lib/export/csv";
 import type { Tables } from "@/types/database.types";
 
 export default async function SubsidiesPage() {
@@ -60,6 +60,7 @@ export default async function SubsidiesPage() {
     },
     { label: "Statut", value: (s) => SUBSIDY_STATUS_LABELS[s.status]?.label ?? s.status },
   ];
+  const subsidyExport = prepareExportRows(subsidyList, exportColumns);
 
   return (
     <div className="flex flex-col gap-6">
@@ -70,7 +71,7 @@ export default async function SubsidiesPage() {
         </div>
         <div className="flex items-center gap-2">
           {canExport ? (
-            <ExportButton filename="subventions" sheetName="Subventions" rows={subsidyList} columns={exportColumns} />
+            <ExportButton filename="subventions" sheetName="Subventions" headers={subsidyExport.headers} data={subsidyExport.data} />
           ) : null}
           <Can module="subsidies" action="create">
             <SubsidyFormDialog />
