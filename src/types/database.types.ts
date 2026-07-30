@@ -1049,6 +1049,23 @@ export interface Database {
       can_view_document: { Args: { p_user: string; p_document_id: string }; Returns: boolean };
       can_edit_document: { Args: { p_user: string; p_document_id: string }; Returns: boolean };
       generate_due_notifications: { Args: Record<string, never>; Returns: undefined };
+      archive_team_member: { Args: { p_id: string }; Returns: undefined };
+      create_document: {
+        Args: {
+          p_event_id: string;
+          p_author_id: string;
+          p_storage_path: string;
+          p_file_size: number | null;
+          p_mime_type: string | null;
+          p_name: string;
+          p_category: string;
+          p_confidentiality_level: DocumentConfidentiality;
+          p_partner_id?: string | null;
+          p_speaker_id?: string | null;
+          p_task_id?: string | null;
+        };
+        Returns: string;
+      };
     };
     Enums: {
       event_status: EventStatus;

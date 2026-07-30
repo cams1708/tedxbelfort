@@ -44,28 +44,24 @@ export async function uploadAndLinkDocument(
   });
   if (uploadError) return { error: "Échec de l’envoi du fichier (" + uploadError.message + ")" };
 
-  const { data: doc, error: insertError } = await supabase
-    .from("documents")
-    .insert({
-      event_id: input.eventId,
-      author_id: user.id,
-      storage_path: path,
-      file_size: input.file.size,
-      mime_type: input.file.type || null,
-      name: input.name,
-      category: input.category,
-      confidentiality_level: input.confidentialityLevel,
-      partner_id: input.partnerId ?? null,
-      speaker_id: input.speakerId ?? null,
-      task_id: input.taskId ?? null,
-    })
-    .select("id")
-    .single();
+  const { data: documentId, error: insertError } = await supabase.rpc("create_document", {
+    p_event_id: input.eventId,
+    p_author_id: user.id,
+    p_storage_path: path,
+    p_file_size: input.file.size,
+    p_mime_type: input.file.type || null,
+    p_name: input.name,
+    p_category: input.category,
+    p_confidentiality_level: input.confidentialityLevel,
+    p_partner_id: input.partnerId ?? null,
+    p_speaker_id: input.speakerId ?? null,
+    p_task_id: input.taskId ?? null,
+  });
 
-  if (insertError || !doc) {
+  if (insertError || !documentId) {
     await admin.storage.from(BUCKET).remove([path]);
     return { error: "Impossible d’enregistrer le document (" + (insertError?.message ?? "erreur inconnue") + ")" };
   }
 
-  return { documentId: doc.id };
+  return { documentId };
 }

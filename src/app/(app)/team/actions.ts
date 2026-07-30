@@ -51,10 +51,7 @@ export async function updateTeamMemberAction(memberId: string, formData: FormDat
 
 export async function archiveTeamMemberAction(memberId: string): Promise<ActionState> {
   const supabase = await createClient();
-  const { error } = await supabase
-    .from("team_members")
-    .update({ deleted_at: new Date().toISOString() })
-    .eq("id", memberId);
+  const { error } = await supabase.rpc("archive_team_member", { p_id: memberId });
   if (error) return { error: "Suppression refusée : " + error.message };
   revalidatePath("/team");
   return { success: true };
