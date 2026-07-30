@@ -35,13 +35,14 @@ export async function createPartnerAction(formData: FormData): Promise<ActionSta
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Formulaire invalide" };
 
   const supabase = await createClient();
-  const { tags, contact_email, owner_id, next_followup_date, ...rest } = parsed.data;
+  const { tags, contact_email, owner_id, assigned_team_member_id, next_followup_date, ...rest } = parsed.data;
 
   const { error } = await supabase.from("partners").insert({
     event_id: eventId,
     ...rest,
     contact_email: contact_email || null,
     owner_id: owner_id || null,
+    assigned_team_member_id: assigned_team_member_id || null,
     next_followup_date: next_followup_date || null,
     tags: parseTags(tags),
   });
@@ -57,7 +58,7 @@ export async function updatePartnerAction(partnerId: string, formData: FormData)
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Formulaire invalide" };
 
   const supabase = await createClient();
-  const { tags, contact_email, owner_id, next_followup_date, ...rest } = parsed.data;
+  const { tags, contact_email, owner_id, assigned_team_member_id, next_followup_date, ...rest } = parsed.data;
 
   const { error } = await supabase
     .from("partners")
@@ -65,6 +66,7 @@ export async function updatePartnerAction(partnerId: string, formData: FormData)
       ...rest,
       contact_email: contact_email || null,
       owner_id: owner_id || null,
+      assigned_team_member_id: assigned_team_member_id || null,
       next_followup_date: next_followup_date || null,
       tags: parseTags(tags),
     })

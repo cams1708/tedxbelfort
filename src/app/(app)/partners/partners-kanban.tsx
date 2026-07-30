@@ -33,8 +33,8 @@ function PartnerCard({ partner }: { partner: PartnerRow }) {
         </Link>
         <div className="flex items-center justify-between">
           <StatusBadge label={priority.label} tone={priority.tone} />
-          {partner.owner_name ? (
-            <span className="text-xs text-muted-foreground">{partner.owner_name}</span>
+          {partner.assigned_team_member_name ? (
+            <span className="text-xs text-muted-foreground">{partner.assigned_team_member_name}</span>
           ) : null}
         </div>
       </Card>

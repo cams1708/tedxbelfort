@@ -21,8 +21,15 @@ import { archivePartnerAction } from "@/app/(app)/partners/actions";
 import { PARTNER_PRIORITY_LABELS, PARTNER_STATUS_LABELS } from "@/lib/labels";
 import { Pencil, Trash2 } from "lucide-react";
 import type { Tables } from "@/types/database.types";
+import type { TeamMemberOption } from "@/app/(app)/partners/types";
 
-export function PartnerDetailHeader({ partner }: { partner: Tables<"partners"> }) {
+export function PartnerDetailHeader({
+  partner,
+  teamMembers = [],
+}: {
+  partner: Tables<"partners">;
+  teamMembers?: TeamMemberOption[];
+}) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const status = PARTNER_STATUS_LABELS[partner.status];
@@ -41,6 +48,7 @@ export function PartnerDetailHeader({ partner }: { partner: Tables<"partners"> }
         <Can module="partners" action="edit">
           <PartnerFormDialog
             partner={partner}
+            teamMembers={teamMembers}
             trigger={
               <Button variant="outline" size="sm">
                 <Pencil className="size-3.5" /> Modifier

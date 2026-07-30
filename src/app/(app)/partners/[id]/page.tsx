@@ -32,6 +32,18 @@ export default async function PartnerDetailPage({ params }: { params: Promise<{ 
   if (!partner) notFound();
 
   const { data: event } = await supabase.from("events").select("currency").eq("id", eventId).single();
+  const { data: teamMembers } = await supabase
+    .from("team_members")
+    .select("id, first_name, last_name")
+    .eq("event_id", eventId)
+    .order("first_name");
+  const teamMemberList = teamMembers ?? [];
+  const assignedTeamMemberName = partner.assigned_team_member_id
+    ? (() => {
+        const m = teamMemberList.find((tm) => tm.id === partner.assigned_team_member_id);
+        return m ? `${m.first_name} ${m.last_name}` : null;
+      })()
+    : null;
 
   const canViewAmounts = has("partners", "view_amounts");
   const canViewConfidential = has("partners", "view_confidential_notes");
@@ -69,7 +81,7 @@ export default async function PartnerDetailPage({ params }: { params: Promise<{ 
   return (
     <div className="flex flex-col gap-6">
       <BackLink href="/partners" label="Retour aux partenaires" />
-      <PartnerDetailHeader partner={partner} />
+      <PartnerDetailHeader partner={partner} teamMembers={teamMemberList} />
 
       <Tabs defaultValue="info" className="flex flex-col gap-4">
         <TabsList>
@@ -94,6 +106,7 @@ export default async function PartnerDetailPage({ params }: { params: Promise<{ 
                 <Field label="E-mail" value={partner.contact_email} />
                 <Field label="Téléphone" value={partner.contact_phone} />
                 <Field label="Source" value={partner.source} />
+                <Field label="Responsable" value={assignedTeamMemberName} />
                 <Field
                   label="Type de contribution"
                   value={partner.contribution_type ? CONTRIBUTION_TYPE_LABELS[partner.contribution_type] : null}

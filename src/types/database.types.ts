@@ -366,6 +366,7 @@ export interface Database {
           contact_phone: string | null;
           source: string | null;
           owner_id: string | null;
+          assigned_team_member_id: string | null;
           priority: PartnerPriority;
           status: PartnerStatus;
           contribution_type: ContributionType | null;
@@ -395,6 +396,7 @@ export interface Database {
           contact_phone?: string | null;
           source?: string | null;
           owner_id?: string | null;
+          assigned_team_member_id?: string | null;
           priority?: PartnerPriority;
           status?: PartnerStatus;
           contribution_type?: ContributionType | null;
@@ -419,6 +421,7 @@ export interface Database {
           contact_phone: string | null;
           source: string | null;
           owner_id: string | null;
+          assigned_team_member_id: string | null;
           priority: PartnerPriority;
           status: PartnerStatus;
           contribution_type: ContributionType | null;

@@ -66,9 +66,10 @@ export function PartnersTable({ partners, currency }: { partners: PartnerRow[]; 
         },
       },
       {
-        accessorKey: "owner_name",
+        accessorKey: "assigned_team_member_name",
         header: "Responsable",
-        cell: ({ row }) => row.original.owner_name ?? <span className="text-muted-foreground">Non attribué</span>,
+        cell: ({ row }) =>
+          row.original.assigned_team_member_name ?? <span className="text-muted-foreground">Non attribué</span>,
       },
       {
         accessorKey: "next_followup_date",

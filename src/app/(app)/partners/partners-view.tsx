@@ -6,9 +6,17 @@ import { PartnersTable } from "@/app/(app)/partners/partners-table";
 import { PartnersKanban } from "@/app/(app)/partners/partners-kanban";
 import { PartnerFormDialog } from "@/app/(app)/partners/partner-form-dialog";
 import { Can } from "@/lib/permissions/context";
-import type { PartnerRow } from "@/app/(app)/partners/types";
+import type { PartnerRow, TeamMemberOption } from "@/app/(app)/partners/types";
 
-export function PartnersView({ partners, currency }: { partners: PartnerRow[]; currency: string }) {
+export function PartnersView({
+  partners,
+  currency,
+  teamMembers,
+}: {
+  partners: PartnerRow[];
+  currency: string;
+  teamMembers: TeamMemberOption[];
+}) {
   const [view, setView] = useState("table");
 
   return (
@@ -19,7 +27,7 @@ export function PartnersView({ partners, currency }: { partners: PartnerRow[]; c
           <TabsTrigger value="kanban">Kanban</TabsTrigger>
         </TabsList>
         <Can module="partners" action="create">
-          <PartnerFormDialog />
+          <PartnerFormDialog teamMembers={teamMembers} />
         </Can>
       </div>
 

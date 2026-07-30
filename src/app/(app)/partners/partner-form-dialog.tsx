@@ -19,14 +19,17 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { PARTNER_STATUS_LABELS, PARTNER_PRIORITY_LABELS, CONTRIBUTION_TYPE_LABELS } from "@/lib/labels";
 import type { Tables } from "@/types/database.types";
+import type { TeamMemberOption } from "@/app/(app)/partners/types";
 import { PlusIcon } from "lucide-react";
 
 export function PartnerFormDialog({
   partner,
   trigger,
+  teamMembers = [],
 }: {
   partner?: Tables<"partners">;
   trigger?: React.ReactElement;
+  teamMembers?: TeamMemberOption[];
 }) {
   const action = partner ? updatePartnerAction.bind(null, partner.id) : createPartnerAction;
   const { open, setOpen, error, isPending, handleAction } = useActionDialog(action);
@@ -90,6 +93,21 @@ export function PartnerFormDialog({
             <div className="flex flex-col gap-2">
               <Label htmlFor="source">Source du contact</Label>
               <Input id="source" name="source" defaultValue={partner?.source ?? ""} />
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label>Responsable</Label>
+              <Select name="assigned_team_member_id" defaultValue={partner?.assigned_team_member_id ?? undefined}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Non attribué" />
+                </SelectTrigger>
+                <SelectContent>
+                  {teamMembers.map((m) => (
+                    <SelectItem key={m.id} value={m.id}>
+                      {m.first_name} {m.last_name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="flex flex-col gap-2">
               <Label>Type de contribution</Label>

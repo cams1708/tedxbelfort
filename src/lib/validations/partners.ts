@@ -34,6 +34,7 @@ export const partnerFormSchema = z.object({
   contact_phone: optionalText,
   source: optionalText,
   owner_id: optionalText,
+  assigned_team_member_id: optionalText,
   priority: z.enum(["low", "medium", "high"]),
   status: z.enum(partnerStatusValues),
   contribution_type: z.enum(["financial", "in_kind", "media", "institutional", "other"]).optional(),
