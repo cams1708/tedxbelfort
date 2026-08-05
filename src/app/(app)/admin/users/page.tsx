@@ -6,6 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { StatusBadge } from "@/components/shared/status-badge";
 import { RequestAccessButton } from "@/components/shared/request-access-button";
 import { InviteUserDialog } from "@/app/(app)/admin/users/invite-dialog";
+import { ResendLinkButton } from "@/app/(app)/admin/users/resend-link-button";
 import { AccessRequestsPanel } from "@/app/(app)/admin/users/access-requests-panel";
 import Link from "next/link";
 
@@ -89,12 +90,13 @@ export default async function AdminUsersPage() {
               <TableHead>Rôle</TableHead>
               <TableHead>Statut</TableHead>
               <TableHead>Dernière connexion</TableHead>
+              {hasAll ? <TableHead className="text-right">Lien</TableHead> : null}
             </TableRow>
           </TableHeader>
           <TableBody>
             {memberList.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
+                <TableCell colSpan={hasAll ? 6 : 5} className="h-24 text-center text-muted-foreground">
                   Aucun utilisateur pour le moment.
                 </TableCell>
               </TableRow>
@@ -123,6 +125,13 @@ export default async function AdminUsersPage() {
                     <TableCell className="text-muted-foreground">
                       {profile?.last_sign_in_at ? new Date(profile.last_sign_in_at).toLocaleString("fr-FR") : "Jamais connecté"}
                     </TableCell>
+                    {hasAll ? (
+                      <TableCell className="text-right">
+                        {emailByUserId.get(member.user_id) ? (
+                          <ResendLinkButton email={emailByUserId.get(member.user_id)!} />
+                        ) : null}
+                      </TableCell>
+                    ) : null}
                   </TableRow>
                 );
               })

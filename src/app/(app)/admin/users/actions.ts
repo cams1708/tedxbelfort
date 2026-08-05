@@ -10,7 +10,11 @@ export interface ActionState {
   success?: boolean;
 }
 
-export async function inviteUserAction(formData: FormData): Promise<ActionState> {
+export interface InviteActionState extends ActionState {
+  inviteLink?: string;
+}
+
+export async function inviteUserAction(formData: FormData): Promise<InviteActionState> {
   const eventId = await resolveCurrentEventId();
   if (!eventId) return { error: "Aucun événement sélectionné." };
 
@@ -53,8 +57,50 @@ export async function inviteUserAction(formData: FormData): Promise<ActionState>
 
   if (memberError) return { error: "Invitation envoyée mais l’attribution au rôle a échoué (" + memberError.message + ")" };
 
+  // Supabase's own invite e-mail relies on its built-in mail service (very
+  // low rate limit, meant for testing — real invite e-mails routinely never
+  // arrive). Always hand back a direct sign-in link too, so it can be
+  // shared manually (personal e-mail, SMS, WhatsApp...) regardless of
+  // whether Supabase's own e-mail gets delivered.
+  const { data: linkData } = await admin.auth.admin.generateLink({
+    type: "magiclink",
+    email: parsed.data.email,
+    options: { redirectTo: `${siteUrl}/auth/callback?next=/accept-invite` },
+  });
+
   revalidatePath("/admin/users");
-  return { success: true };
+  return { success: true, inviteLink: linkData?.properties?.action_link };
+}
+
+export async function generateSignInLinkAction(email: string): Promise<InviteActionState> {
+  const supabase = await createClient();
+  const {
+    data: { user: actingUser },
+  } = await supabase.auth.getUser();
+  const { data: profile } = await supabase.from("profiles").select("is_super_admin").eq("id", actingUser?.id ?? "").single();
+  if (!profile?.is_super_admin) return { error: "Réservé à la super-administratrice." };
+
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+  const admin = createAdminClient();
+
+  // If this account never finished setting its password (still pending an
+  // initial invite), route through /accept-invite so they land on the
+  // "create your password" screen instead of being silently signed in.
+  // Once they're fully activated, a plain sign-in link (site root) is enough.
+  const { data: userList } = await admin.auth.admin.listUsers();
+  const existingUser = userList?.users.find((u) => u.email === email);
+  const needsPasswordSetup = !existingUser?.last_sign_in_at;
+  const redirectTo = needsPasswordSetup ? `${siteUrl}/auth/callback?next=/accept-invite` : siteUrl;
+
+  const { data: linkData, error } = await admin.auth.admin.generateLink({
+    type: "magiclink",
+    email,
+    options: { redirectTo },
+  });
+  if (error || !linkData?.properties?.action_link) {
+    return { error: "Impossible de générer le lien (" + (error?.message ?? "erreur inconnue") + ")" };
+  }
+  return { success: true, inviteLink: linkData.properties.action_link };
 }
 
 export async function setEventMemberStatusAction(memberId: string, status: "active" | "inactive"): Promise<ActionState> {
