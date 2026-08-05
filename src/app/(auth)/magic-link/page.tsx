@@ -2,8 +2,7 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { createBrowserClient } from "@supabase/ssr";
-import type { Database } from "@/types/database.types";
+import { createClient } from "@/lib/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import Link from "next/link";
@@ -13,9 +12,15 @@ import Link from "next/link";
  * (`generateLink`, used for invites and manual "send me a sign-in link").
  * Unlike self-service sign-in (handled by /auth/callback with a `?code=`),
  * these always use the implicit flow: the session tokens arrive in the URL
- * *hash fragment*, which the server never sees. The Supabase browser client
- * auto-detects and persists them (detectSessionInUrl) as soon as it's
- * instantiated on a page load — we just wait for that, then hand off.
+ * *hash fragment*, which the server never sees.
+ *
+ * We can't rely on the Supabase client's own automatic URL detection here:
+ * @supabase/ssr's createBrowserClient hardcodes flowType "pkce" (it ignores
+ * any override), and auth-js actively rejects implicit-flow hash tokens
+ * when flowType is "pkce". So we parse the hash ourselves and hand the
+ * tokens to setSession() directly — that call doesn't care about flowType
+ * and still persists the session the normal (cookie-based) way, which is
+ * what the server/middleware need to see the user as signed in.
  */
 function MagicLinkHandler() {
   const router = useRouter();
@@ -23,24 +28,22 @@ function MagicLinkHandler() {
   const [error, setError] = useState(false);
 
   useEffect(() => {
-    // The shared browser client (src/lib/supabase/client.ts) defaults to
-    // flowType "pkce", which makes @supabase/auth-js actively REJECT the
-    // implicit-flow hash tokens these admin-issued links carry (it throws
-    // "Not a valid PKCE flow url."). This page only ever receives implicit
-    // tokens, so it needs its own client explicitly configured for that.
-    const supabase = createBrowserClient<Database>(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      { auth: { flowType: "implicit" } },
-    );
-    supabase.auth.getSession().then(({ data }) => {
-      const next = searchParams.get("next") ?? "/dashboard";
-      if (data.session) {
-        window.history.replaceState(null, "", window.location.pathname + window.location.search);
-        router.replace(next);
-      } else {
-        setError(true);
-      }
+    const hash = new URLSearchParams(window.location.hash.slice(1));
+    const access_token = hash.get("access_token");
+    const refresh_token = hash.get("refresh_token");
+    const next = searchParams.get("next") ?? "/dashboard";
+
+    const run = async () => {
+      if (!access_token || !refresh_token) return false;
+      const supabase = createClient();
+      const { data, error: sessionError } = await supabase.auth.setSession({ access_token, refresh_token });
+      window.history.replaceState(null, "", window.location.pathname + window.location.search);
+      return !sessionError && !!data.session;
+    };
+
+    run().then((ok) => {
+      if (ok) router.replace(next);
+      else setError(true);
     });
   }, [router, searchParams]);
 
