@@ -2,7 +2,8 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
+import { createBrowserClient } from "@supabase/ssr";
+import type { Database } from "@/types/database.types";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import Link from "next/link";
@@ -22,7 +23,16 @@ function MagicLinkHandler() {
   const [error, setError] = useState(false);
 
   useEffect(() => {
-    const supabase = createClient();
+    // The shared browser client (src/lib/supabase/client.ts) defaults to
+    // flowType "pkce", which makes @supabase/auth-js actively REJECT the
+    // implicit-flow hash tokens these admin-issued links carry (it throws
+    // "Not a valid PKCE flow url."). This page only ever receives implicit
+    // tokens, so it needs its own client explicitly configured for that.
+    const supabase = createBrowserClient<Database>(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      { auth: { flowType: "implicit" } },
+    );
     supabase.auth.getSession().then(({ data }) => {
       const next = searchParams.get("next") ?? "/dashboard";
       if (data.session) {
