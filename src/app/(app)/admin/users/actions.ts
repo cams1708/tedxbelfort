@@ -40,7 +40,7 @@ export async function inviteUserAction(formData: FormData): Promise<InviteAction
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
   const admin = createAdminClient();
   const { data: invited, error: inviteError } = await admin.auth.admin.inviteUserByEmail(parsed.data.email, {
-    redirectTo: `${siteUrl}/auth/callback?next=/accept-invite`,
+    redirectTo: `${siteUrl}/magic-link?next=/accept-invite`,
     data: { full_name: parsed.data.fullName },
   });
 
@@ -65,7 +65,7 @@ export async function inviteUserAction(formData: FormData): Promise<InviteAction
   const { data: linkData } = await admin.auth.admin.generateLink({
     type: "magiclink",
     email: parsed.data.email,
-    options: { redirectTo: `${siteUrl}/auth/callback?next=/accept-invite` },
+    options: { redirectTo: `${siteUrl}/magic-link?next=/accept-invite` },
   });
 
   revalidatePath("/admin/users");
@@ -90,7 +90,7 @@ export async function generateSignInLinkAction(email: string): Promise<InviteAct
   const { data: userList } = await admin.auth.admin.listUsers();
   const existingUser = userList?.users.find((u) => u.email === email);
   const needsPasswordSetup = !existingUser?.last_sign_in_at;
-  const redirectTo = needsPasswordSetup ? `${siteUrl}/auth/callback?next=/accept-invite` : siteUrl;
+  const redirectTo = needsPasswordSetup ? `${siteUrl}/magic-link?next=/accept-invite` : `${siteUrl}/magic-link`;
 
   const { data: linkData, error } = await admin.auth.admin.generateLink({
     type: "magiclink",
